@@ -333,6 +333,7 @@ class TestCode(unittest.TestCase):
 		for s, v in [ ('\x02\x03$\x8a\xf9', 2394873),
 		    ('\x05\x00', None),
 		    ('\x02\x03\x00\x96I', 38473),
+		    ('\x04\x81\xc8' + '\x00' * 200, '\x00' * 200),
 		    ]:
 			self.assertEqual(loads(s), v)
 
