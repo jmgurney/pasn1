@@ -234,9 +234,11 @@ class ASN1Coder(object):
 		if m < 0:
 			val |= 0x40
 			m = -m
+
 		# Base 2
-		# XXX - negative e
-		el = (e.bit_length() + 7) // 8
+		el = (e.bit_length() + 7 + 1) // 8  # + 1 is sign bit
+		if e < 0:
+			e += 256**el	# convert negative to twos-complement
 		if el > 3:
 			v = 0x3
 			encexp = _encodelen(el) + _numtostr(e)
@@ -244,10 +246,10 @@ class ASN1Coder(object):
 			v = el - 1
 			encexp = _numtostr(e)
 
-		return chr(val) + encexp + _numtostr(m)
+		r = chr(val) + encexp + _numtostr(m)
+		return _encodelen(len(r)) + r
 
-	@staticmethod
-	def dec_float(d, pos, end):
+	def dec_float(self, d, pos, end):
 		if pos == end:
 			return float(0), end
 
@@ -263,7 +265,24 @@ class ASN1Coder(object):
 		#elif v & 0b11000000 == 0b01000000:
 		#	raise ValueError('invalid encoding')
 
-		raise NotImplementedError
+		if not (v & 0b10000000):
+			raise NotImplementedError
+
+		if v & 3 == 3:
+			pexp = pos + 2
+			eexp = pos + 2 + ord(d[pos + 1])
+		else:
+			pexp = pos + 1
+			eexp = pos + 1 + (v & 3) + 1
+
+		exp = self.dec_int(d, pexp, eexp)[0]
+
+		n = float(int(d[eexp:end].encode('hex'), 16))
+		r = n * 2 ** exp
+		if v & 0b1000000:
+			r = -r
+
+		return r, end
 
 	def dumps(self, obj):
 		tf = self._typemap[type(obj)]
@@ -311,6 +330,8 @@ class TestCode(unittest.TestCase):
 
 		self.assertEqual(dumps(None), '0500'.decode('hex'))
 
+		self.assertEqual(dumps(.15625), '090380fb05'.decode('hex'))
+
 	def test_consume(self):
 		b = dumps(5)
 		self.assertRaises(ValueError, loads, b + '398473', consume=True)
@@ -324,6 +345,7 @@ class TestCode(unittest.TestCase):
 		self.assertTrue(math.isnan(v))
 
 	def test_invalids(self):
+		# Add tests for base 8, 16 floats among others
 		for v in [ '010101', ]:
 			self.assertRaises(ValueError, loads, v.decode('hex'))
 
@@ -347,7 +369,9 @@ class TestCode(unittest.TestCase):
 		for i in [ None,
 		    True, False,
 		    -1, 0, 1, 255, 256, -255, -256, 23498732498723, -2398729387234, (1<<2383) + 23984734, (-1<<1983) + 23984723984,
-		    float(0), float('-0'), float('inf'), float('-inf'),
+		    float(0), float('-0'), float('inf'), float('-inf'), float(1.0), float(-1.0),
+		    float('353.3487'), float('2387.23873e492'), float('2387.348732e-392'),
+		    float('.15625'),
 		    'weoifjwef',
 		    u'\U0001f4a9',
 		    set((1,2,3)), set((1,'sjlfdkj', None, float('inf'))),
