@@ -339,6 +339,9 @@ class TestCode(unittest.TestCase):
 		# XXX - still possible that an internal data member
 		# doesn't consume all
 
+	# XXX - test that sets are ordered properly
+	# XXX - test that dicts are ordered properly..
+
 	def test_nan(self):
 		s = dumps(float('nan'))
 		v = loads(s)
@@ -387,6 +390,3 @@ class TestCode(unittest.TestCase):
 
 	def test_loads(self):
 		self.assertRaises(ValueError, loads, '\x00\x02\x00')
-
-if __name__ == '__main__':
-	pass
