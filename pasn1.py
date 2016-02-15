@@ -9,6 +9,7 @@
 # MUST not be used.  The shorted form of length encoding MUST be used.
 # A longer length encoding MUST be rejected.
 
+import datetime
 import math
 import os
 import pdb
@@ -96,7 +97,7 @@ class ASN1Coder(object):
 		type(None): 'null',
 		unicode: 'unicode',
 		#decimal.Decimal: 'float',
-		#datetime.datetime: 'datetime',
+		datetime.datetime: 'datetime',
 		#datetime.timedelta: 'timedelta',
 	}
 	_tagmap = {
@@ -106,10 +107,10 @@ class ASN1Coder(object):
 		'\x05':	'null',
 		'\x09':	'float',
 		'\x0c':	'unicode',
+		'\x18': 'datetime',
 		'\x30':	'list',
 		'\x31': 'set',
 		'\xc0':	'dict',
-		#'xxx': 'datetime',
 	}
 
 	_typetag = dict((v, k) for k, v in _tagmap.iteritems())
@@ -321,6 +322,23 @@ class ASN1Coder(object):
 		fun = getattr(self, 'dec_%s' % t)
 		return fun(data, pos + 1 + b, end)
 
+	def enc_datetime(self, obj):
+		ts = obj.strftime('%Y%m%d%H%M%S')
+		if obj.microsecond:
+			ts += ('.%06d' % obj.microsecond).rstrip('0')
+		ts += 'Z'
+		return _encodelen(len(ts)) + ts
+
+	def dec_datetime(self, data, pos, end):
+		ts = data[pos:end]
+		if '.' in ts:
+			fstr = '%Y%m%d%H%M%S.%fZ'
+			if ts.endswith('0Z'):
+				raise ValueError('invalid trailing zeros')
+		else:
+			fstr = '%Y%m%d%H%M%SZ'
+		return datetime.datetime.strptime(ts, fstr), end
+
 	def loads(self, data, pos=0, end=None, consume=False):
 		if end is None:
 			end = len(data)
@@ -379,7 +397,7 @@ def genfailures(obj):
 				o = loads(ts, consume=True)
 				if o != obj or not deeptypecmp(o, obj):
 					raise ValueError
-			except (ValueError, KeyError, IndexError):
+			except (ValueError, KeyError, IndexError, TypeError):
 				pass
 			except Exception:
 				raise
@@ -439,6 +457,7 @@ class TestCode(unittest.TestCase):
 		    '0903830001',	# float exponent encoding
 		    '3007020101020102040673646c6b666a',	# list short string still valid
 		    'c007020101020102020105040673646c6b666a', # dict short value still valid
+		    '181632303136303231353038343031362e3539303839305a', #datetime w/ trailing zero
 		    ]:
 			self.assertRaises(ValueError, loads, v.decode('hex'))
 
@@ -458,6 +477,11 @@ class TestCode(unittest.TestCase):
 			v = dumps(s)
 			self.assertEqual(loads(v), s)
 
+	def test_invaliddate(self):
+		pass
+		# XXX - add test to reject datetime w/ tzinfo, or that it handles it
+		# properly
+
 	def test_dumps(self):
 		for i in [ None,
 		    True, False,
@@ -467,9 +491,11 @@ class TestCode(unittest.TestCase):
 		    float('.15625'),
 		    'weoifjwef',
 		    u'\U0001f4a9',
-		    [],
-		    {},
+		    [], [ 1,2,3 ],
+		    {}, { 5: 10, 'adfkj': 34 },
 		    set(), set((1,2,3)), set((1,'sjlfdkj', None, float('inf'))),
+		    datetime.datetime.utcnow(), datetime.datetime.utcnow().replace(microsecond=0),
+		    datetime.datetime.utcnow().replace(microsecond=1000),
 		    ]:
 			s = dumps(i)
 			o = loads(s)
