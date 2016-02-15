@@ -95,6 +95,9 @@ class ASN1Coder(object):
 		str: 'bytes',
 		type(None): 'null',
 		unicode: 'unicode',
+		#decimal.Decimal: 'float',
+		#datetime.datetime: 'datetime',
+		#datetime.timedelta: 'timedelta',
 	}
 	_tagmap = {
 		'\x01':	'bool',
