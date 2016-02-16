@@ -82,6 +82,10 @@ class ASN1Object:
 		self._tag = tag
 
 class ASN1Coder(object):
+	'''A class that contains an PASN.1 encoder/decoder.
+
+	Exports two methods, loads and dumps.'''
+
 	def __init__(self):
 		pass
 
@@ -305,6 +309,8 @@ class ASN1Coder(object):
 		return r, end
 
 	def dumps(self, obj):
+		'''Convert obj into a string.'''
+
 		tf = self._typemap[type(obj)]
 		fun = getattr(self, 'enc_%s' % tf)
 		return self._typetag[tf] + fun(obj)
@@ -340,12 +346,20 @@ class ASN1Coder(object):
 		return datetime.datetime.strptime(ts, fstr), end
 
 	def loads(self, data, pos=0, end=None, consume=False):
+		'''Load from data, starting at pos (option), and ending
+		at end (optional).  If it is required to consume the
+		whole string (not the default), set consume to True, and
+		a ValueError will be raised if the string is not
+		completely consumed.  The second item in ValueError will
+		be the possition that was the detected end.'''
+
 		if end is None:
 			end = len(data)
 		r, e = self._loads(data, pos, end)
 
 		if consume and e != end:
-			raise ValueError('entire string not consumed')
+			raise ValueError('entire string not consumed', e)
+
 		return r
 
 def deeptypecmp(obj, o):
