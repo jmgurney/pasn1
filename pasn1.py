@@ -382,6 +382,10 @@ class ASN1Coder(object):
 
 		return r
 
+_coder = ASN1Coder()
+dumps = _coder.dumps
+loads = _coder.loads
+
 def deeptypecmp(obj, o):
 	#print 'dtc:', `obj`, `o`
 	if type(obj) != type(o):
@@ -437,10 +441,6 @@ def genfailures(obj):
 				raise
 			else:
 				raise AssertionError('uncaught modification: %s, byte %d, orig: %02x' % (ts.encode('hex'), i, ord(s[i])))
-
-_coder = ASN1Coder()
-dumps = _coder.dumps
-loads = _coder.loads
 
 class TestCode(unittest.TestCase):
 	def test_primv(self):
