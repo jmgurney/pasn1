@@ -325,7 +325,7 @@ class ASN1Coder(object):
 			tf = self._typemap[type(obj)]
 		except KeyError:
 			if self.coerce is None:
-				raise
+				raise TypeError('unhandled object: %s' % `obj`)
 
 			tf, obj = self.coerce(obj)
 
@@ -579,6 +579,8 @@ class TestCode(unittest.TestCase):
 		es = ac.dumps(o)
 		self.assertEqual(ac.loads(es), v)
 		self.assertIsInstance(es, bytes)
+
+		self.assertRaises(TypeError, dumps, o)
 
 	def test_loads(self):
 		self.assertRaises(ValueError, loads, '\x00\x02\x00')
