@@ -11,6 +11,7 @@
 
 import datetime
 import math
+import mock
 import os
 import pdb
 import sys
@@ -265,15 +266,16 @@ class ASN1Coder(object):
 
 		# Base 2
 		el = (e.bit_length() + 7 + 1) // 8  # + 1 is sign bit
+		if el > 2:
+			raise ValueError('exponent too large')
+
 		if e < 0:
 			e += 256**el	# convert negative to twos-complement
-		if el > 3:
-			v = 0x3
-			encexp = _encodelen(el) + _numtostr(e)
-		else:
-			v = el - 1
-			encexp = _numtostr(e)
 
+		v = el - 1
+		encexp = _numtostr(e)
+
+		val |= v
 		r = chr(val) + encexp + _numtostr(m)
 		return _encodelen(len(r)) + r
 
@@ -299,15 +301,10 @@ class ASN1Coder(object):
 		#elif v & 0b11000000 == 0b01000000:
 		#	raise ValueError('invalid encoding')
 
-		if v & 3 == 3:
-			pexp = pos + 2
-			explen = ord(d[pos + 1])
-			if explen <= 3:
-				raise ValueError('must use other length encoding')
-			eexp = pos + 2 + explen
-		else:
-			pexp = pos + 1
-			eexp = pos + 1 + (v & 3) + 1
+		if (v & 3) >= 2:
+			raise ValueError('large exponents not supported')
+		pexp = pos + 1
+		eexp = pos + 1 + (v & 3) + 1
 
 		exp = self.dec_int(d, pexp, eexp)[0]
 
@@ -479,12 +476,17 @@ class TestCode(unittest.TestCase):
 		    '0903900001',	# float base
 		    '0903000001',	# float decimal encoding
 		    '0903830001',	# float exponent encoding
+		    '090b827fffcc0df505d0fa58f7', # float large exponent
 		    '3007020101020102040673646c6b666a',	# list short string still valid
 		    'c007020101020102020105040673646c6b666a', # dict short value still valid
 		    '181632303136303231353038343031362e3539303839305a', #datetime w/ trailing zero
 		    '181632303136303231373136343034372e3035343433367a', #datetime w/ lower z
 		    ]:
 			self.assertRaises(ValueError, loads, v.decode('hex'))
+
+	def test_invalid_floats(self):
+		with mock.patch('math.frexp', return_value=(.87232, 1 << 23)):
+			self.assertRaises(ValueError, dumps, 1.1)
 
 	def test_consume(self):
 		b = dumps(5)
@@ -527,7 +529,8 @@ class TestCode(unittest.TestCase):
 		    True, False,
 		    -1, 0, 1, 255, 256, -255, -256, 23498732498723, -2398729387234, (1<<2383) + 23984734, (-1<<1983) + 23984723984,
 		    float(0), float('-0'), float('inf'), float('-inf'), float(1.0), float(-1.0),
-		    float('353.3487'), float('2387.23873e492'), float('2387.348732e-392'),
+		    float('353.3487'), float('2.38723873e+307'), float('2.387349e-317'),
+		    sys.float_info.max, sys.float_info.min,
 		    float('.15625'),
 		    'weoifjwef',
 		    u'\U0001f4a9',
