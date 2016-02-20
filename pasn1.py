@@ -183,7 +183,8 @@ class ASN1Coder(object):
 	def enc_dict(self, obj):
 		#it = list(obj.iteritems())
 		#it.sort()
-		r = ''.join(self.dumps(k) + self.dumps(v) for k, v in obj.iteritems())
+		r = ''.join(self.dumps(k) + self.dumps(v) for k, v in
+		    obj.iteritems())
 		return _encodelen(len(r)) + r
 
 	def dec_dict(self, d, pos, end):
@@ -434,8 +435,6 @@ def genfailures(obj):
 					raise ValueError
 			except (ValueError, KeyError, IndexError, TypeError):
 				pass
-			except Exception:
-				raise
 			else:
 				raise AssertionError('uncaught modification: %s, byte %d, orig: %02x' % (ts.encode('hex'), i, ord(s[i])))
 
@@ -490,7 +489,8 @@ class TestCode(unittest.TestCase):
 
 	def test_consume(self):
 		b = dumps(5)
-		self.assertRaises(ValueError, loads, b + '398473', consume=True)
+		self.assertRaises(ValueError, loads, b + '398473',
+		    consume=True)
 
 		# XXX - still possible that an internal data member
 		# doesn't consume all
@@ -521,30 +521,36 @@ class TestCode(unittest.TestCase):
 
 	def test_invaliddate(self):
 		pass
-		# XXX - add test to reject datetime w/ tzinfo, or that it handles it
-		# properly
+		# XXX - add test to reject datetime w/ tzinfo, or that it
+		# handles it properly
 
 	def test_dumps(self):
 		for i in [ None,
 		    True, False,
-		    -1, 0, 1, 255, 256, -255, -256, 23498732498723, -2398729387234, (1<<2383) + 23984734, (-1<<1983) + 23984723984,
-		    float(0), float('-0'), float('inf'), float('-inf'), float(1.0), float(-1.0),
-		    float('353.3487'), float('2.38723873e+307'), float('2.387349e-317'),
+		    -1, 0, 1, 255, 256, -255, -256,
+		    23498732498723, -2398729387234,
+		    (1<<2383) + 23984734, (-1<<1983) + 23984723984,
+		    float(0), float('-0'), float('inf'), float('-inf'),
+		    float(1.0), float(-1.0), float('353.3487'),
+		    float('2.38723873e+307'), float('2.387349e-317'),
 		    sys.float_info.max, sys.float_info.min,
 		    float('.15625'),
 		    'weoifjwef',
 		    u'\U0001f4a9',
 		    [], [ 1,2,3 ],
 		    {}, { 5: 10, 'adfkj': 34 },
-		    set(), set((1,2,3)), set((1,'sjlfdkj', None, float('inf'))),
-		    datetime.datetime.utcnow(), datetime.datetime.utcnow().replace(microsecond=0),
+		    set(), set((1,2,3)),
+		    set((1,'sjlfdkj', None, float('inf'))),
+		    datetime.datetime.utcnow(),
+		    datetime.datetime.utcnow().replace(microsecond=0),
 		    datetime.datetime.utcnow().replace(microsecond=1000),
 		    ]:
 			s = dumps(i)
 			o = loads(s)
 			self.assertEqual(i, o)
 
-		tobj = { 1: 'dflkj', 5: u'sdlkfj', 'float': 1, 'largeint': 1<<342, 'list': [ 1, 2, u'str', 'str' ] }
+		tobj = { 1: 'dflkj', 5: u'sdlkfj', 'float': 1,
+		    'largeint': 1<<342, 'list': [ 1, 2, u'str', 'str' ] }
 
 		out = dumps(tobj)
 		self.assertEqual(tobj, loads(out))
