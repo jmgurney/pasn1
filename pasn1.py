@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 # A Pure Python ASN.1 encoder/decoder w/ a calling interface in the spirit
-# of pickle.  It will automaticly do the correct thing if possible.
+# of pickle.
 #
-# This uses a profile of ASN.1.
+# It uses a profile of ASN.1.
 #
 # All lengths must be specified.  That is that End-of-contents octets
 # MUST not be used.  The shorted form of length encoding MUST be used.
@@ -317,7 +317,7 @@ class ASN1Coder(object):
 		return r, end
 
 	def dumps(self, obj):
-		'''Convert obj into a string.'''
+		'''Convert obj into an array of bytes.'''
 
 		try:
 			tf = self._typemap[type(obj)]
@@ -364,7 +364,7 @@ class ASN1Coder(object):
 		return datetime.datetime.strptime(ts, fstr), end
 
 	def loads(self, data, pos=0, end=None, consume=False):
-		'''Load from data, starting at pos (option), and ending
+		'''Load from data, starting at pos (optional), and ending
 		at end (optional).  If it is required to consume the
 		whole string (not the default), set consume to True, and
 		a ValueError will be raised if the string is not
