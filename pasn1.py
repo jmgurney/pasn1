@@ -127,7 +127,7 @@ class ASN1Coder(object):
 		'\x18': 'datetime',
 		'\x30':	'list',
 		'\x31': 'set',
-		'\xc0':	'dict',
+		'\xe0':	'dict',
 	}
 
 	_typetag = dict((v, k) for k, v in _tagmap.iteritems())
@@ -477,7 +477,7 @@ class TestCode(unittest.TestCase):
 		    '0903830001',	# float exponent encoding
 		    '090b827fffcc0df505d0fa58f7', # float large exponent
 		    '3007020101020102040673646c6b666a',	# list short string still valid
-		    'c007020101020102020105040673646c6b666a', # dict short value still valid
+		    'e007020101020102020105040673646c6b666a', # dict short value still valid
 		    '181632303136303231353038343031362e3539303839305a', #datetime w/ trailing zero
 		    '181632303136303231373136343034372e3035343433367a', #datetime w/ lower z
 		    ]:
