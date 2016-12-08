@@ -18,4 +18,5 @@ is used by this library.  In order to support dict types, it uses the
 Private Constructed type 0.  The contents are pairs of key value objects.
 bytes (aka str in Python 2) is mapped to the octet string type.  The
 minimal encoding is used so that the same data will be encoded as the
-same string, similar to the ASN.1 DER encoding.
+same string, similar to the ASN.1 DER encoding.  The class ASN1Coder
+is available if the dict support is required to not be present.
