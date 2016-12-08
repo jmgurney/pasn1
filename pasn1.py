@@ -3,10 +3,12 @@
 '''A Pure Python ASN.1 encoder/decoder w/ a calling interface in the spirit
 of pickle.
 
-It uses a profile of ASN.1.
+The default dumps/loads uses a profile of ASN.1 that supports serialization
+of key/value pairs.  This is non-standard.  Instantiate the class ASN1Coder
+to get a pure ASN.1 serializer/deserializer.
 
 All lengths must be specified.  That is that End-of-contents octets
-MUST not be used.  The shorted form of length encoding MUST be used.
+MUST NOT be used.  The shorted form of length encoding MUST be used.
 A longer length encoding MUST be rejected.'''
 
 __author__ = 'John-Mark Gurney'
@@ -120,7 +122,6 @@ class ASN1Coder(object):
 		with the obj.  It is expected to return a tuple of a string
 		and an object that has the method w/ the string as defined:
 			'bool': __nonzero__
-			'dict': iteritems
 			'float': compatible w/ float
 			'int': compatible w/ int
 			'list': __iter__
@@ -135,7 +136,6 @@ class ASN1Coder(object):
 
 	_typemap = {
 		bool: 'bool',
-		dict: 'dict',
 		float: 'float',
 		int: 'int',
 		list: 'list',
@@ -158,7 +158,6 @@ class ASN1Coder(object):
 		'\x18': 'datetime',
 		'\x30':	'list',
 		'\x31': 'set',
-		'\xe0':	'dict',
 	}
 
 	_typetag = dict((v, k) for k, v in _tagmap.iteritems())
@@ -210,29 +209,6 @@ class ASN1Coder(object):
 	@staticmethod
 	def dec_null(d, pos, end):
 		return None, end
-
-	def enc_dict(self, obj):
-		#it = list(obj.iteritems())
-		#it.sort()
-		r = ''.join(self.dumps(k) + self.dumps(v) for k, v in
-		    obj.iteritems())
-		return _encodelen(len(r)) + r
-
-	def dec_dict(self, d, pos, end):
-		r = {}
-		vend = pos
-		while pos < end:
-			k, kend = self._loads(d, pos, end)
-			#if kend > end:
-			#	raise ValueError('key past end')
-			v, vend = self._loads(d, kend, end)
-			if vend > end:
-				raise ValueError('value past end')
-
-			r[k] = v
-			pos = vend
-
-		return r, vend
 
 	def enc_list(self, obj):
 		r = ''.join(self.dumps(x) for x in obj)
@@ -415,7 +391,43 @@ class ASN1Coder(object):
 
 		return r
 
-_coder = ASN1Coder()
+class ASN1DictCoder(ASN1Coder):
+	'''This adds support for the non-standard dict serialization.
+
+	The coerce method also supports the following type:
+			'dict': iteritems
+	'''
+
+	_typemap = ASN1Coder._typemap.copy()
+	_typemap[dict] = 'dict'
+	_tagmap = ASN1Coder._tagmap.copy()
+	_tagmap['\xe0'] = 'dict'
+	_typetag = dict((v, k) for k, v in _tagmap.iteritems())
+
+	def enc_dict(self, obj):
+		#it = list(obj.iteritems())
+		#it.sort()
+		r = ''.join(self.dumps(k) + self.dumps(v) for k, v in
+		    obj.iteritems())
+		return _encodelen(len(r)) + r
+
+	def dec_dict(self, d, pos, end):
+		r = {}
+		vend = pos
+		while pos < end:
+			k, kend = self._loads(d, pos, end)
+			#if kend > end:
+			#	raise ValueError('key past end')
+			v, vend = self._loads(d, kend, end)
+			if vend > end:
+				raise ValueError('value past end')
+
+			r[k] = v
+			pos = vend
+
+		return r, vend
+
+_coder = ASN1DictCoder()
 dumps = _coder.dumps
 loads = _coder.loads
 
@@ -629,3 +641,8 @@ class TestCode(unittest.TestCase):
 
 	def test_loads(self):
 		self.assertRaises(ValueError, loads, '\x00\x02\x00')
+
+	def test_nodict(self):
+		'''Verify that ASN1Coder does not support dict.'''
+
+		self.assertRaises(KeyError, ASN1Coder().loads, dumps({}))
