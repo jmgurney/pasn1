@@ -386,6 +386,10 @@ class ASN1Coder(object):
 		if ts[-1] != 'Z':
 			raise ValueError('last character must be Z')
 
+		# Real bug is in strptime, but work around it here.
+		if ' ' in data:
+			raise ValueError('no spaces are allowed')
+
 		if '.' in ts:
 			fstr = '%Y%m%d%H%M%S.%fZ'
 			if ts.endswith('0Z'):
@@ -511,6 +515,7 @@ class TestCode(unittest.TestCase):
 		    'e007020101020102020105040673646c6b666a', # dict short value still valid
 		    '181632303136303231353038343031362e3539303839305a', #datetime w/ trailing zero
 		    '181632303136303231373136343034372e3035343433367a', #datetime w/ lower z
+		    '181632303136313220383031303933302e3931353133385a', #datetime w/ space
 		    ]:
 			self.assertRaises(ValueError, loads, v.decode('hex'))
 
