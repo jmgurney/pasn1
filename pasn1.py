@@ -482,7 +482,7 @@ def genfailures(obj):
 					raise ValueError
 			except (ValueError, KeyError, IndexError, TypeError):
 				pass
-			else:
+			else:	# pragma: no cover
 				raise AssertionError('uncaught modification: %s, byte %d, orig: %02x' % (ts.encode('hex'), i, ord(s[i])))
 
 class TestCode(unittest.TestCase):
