@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='pasn1',
-      version='1.0',
+      version='1.0.1',
       description='An ASN.1 encoder/decoder with json like interface.',
       author='John-Mark Gurney',
       author_email='jmg@funkthat.com',
