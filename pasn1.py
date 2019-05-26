@@ -44,9 +44,7 @@ __license__ = '2-clause BSD license'
 
 import datetime
 import math
-import mock
 import os
-import pdb
 import sys
 import unittest
 
@@ -532,6 +530,7 @@ class TestCode(unittest.TestCase):
 			self.assertRaises(ValueError, loads, v.decode('hex'))
 
 	def test_invalid_floats(self):
+		import mock
 		with mock.patch('math.frexp', return_value=(.87232, 1 << 23)):
 			self.assertRaises(ValueError, dumps, 1.1)
 
